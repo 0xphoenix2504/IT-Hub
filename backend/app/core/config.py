@@ -38,6 +38,12 @@ class Settings(BaseSettings):
     ldaps_bind_password: str = ""
     ticketing_app_base_url: str = ""
     assets_app_base_url: str = ""
+    ticketing_api_url: str = ""
+    ticketing_api_token: str = ""
+    assets_api_url: str = ""
+    assets_api_token: str = ""
+    monitor_api_url: str = ""
+    monitor_api_token: str = ""
     stats_cache_seconds: str = ""
     trust_proxy: str = ""
 

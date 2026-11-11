@@ -5,30 +5,35 @@ from app.services.dashboard import deep_links
 
 def connection_status() -> list[ConnectionOut]:
     links = deep_links()
+    ticketing_cfg = registry.ticketing().configured()
+    assets_cfg = registry.assets().configured()
+    monitor_cfg = registry.monitor().configured()
+    sso_cfg = registry.sso().configured()
+
     return [
         ConnectionOut(
             key="ticketing_api",
             label="Ticketing read API",
-            configured=registry.ticketing().configured(),
-            note="The ticketing system does not have a read API connected yet.",
+            configured=ticketing_cfg,
+            note="Connected to external ticketing system." if ticketing_cfg else "The ticketing system does not have a read API connected yet.",
         ),
         ConnectionOut(
             key="assets_api",
             label="Assets read API",
-            configured=registry.assets().configured(),
-            note="The assets system does not have a read API connected yet.",
+            configured=assets_cfg,
+            note="Connected to external assets system." if assets_cfg else "The assets system does not have a read API connected yet.",
         ),
         ConnectionOut(
             key="monitor",
             label="Network monitor",
-            configured=registry.monitor().configured(),
-            note="No monitor product is selected. The adapter interface is in place.",
+            configured=monitor_cfg,
+            note="Connected to external network monitor." if monitor_cfg else "No monitor product is selected. The adapter interface is in place.",
         ),
         ConnectionOut(
             key="sso",
             label="Single sign-on handoff",
-            configured=registry.sso().configured(),
-            note="The handoff interface is in place. No sign-in protocol is configured.",
+            configured=sso_cfg,
+            note="Configured for SSO handoff." if sso_cfg else "The handoff interface is in place. No sign-in protocol is configured.",
         ),
         ConnectionOut(
             key="ticketing_link",
