@@ -1,0 +1,8 @@
+EMPTY_MESSAGE = "No data connected yet"
+ERROR_MESSAGE = "Could not load this data."
+INVALID_LOGIN = "Invalid username or password."
+LOCKED = "Too many attempts. Try again later."
+UNAVAILABLE = "Sign-in is unavailable right now."
+NO_ACCESS = "You do not have access to this."
+SIGN_IN_REQUIRED = "Sign in required."
+MISSING_HEADER = "Missing request header."

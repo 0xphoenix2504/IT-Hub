@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #101418;
+  --elevated: #171c22;
+  --card: #1c232b;
+  --lime: #c6f54a;
+  --ink: #142000;
+  --text: #f4f7f5;
+  --muted: #c3ccd4;
+  --line: rgba(255, 255, 255, 0.1);
+  --good: #3ddc97;
+  --warn: #f5c451;
+  --bad: #ff6b6b;
+  --panel: #f4f6f4;
+  --pine: #172026;
+  color: var(--text);
+  background: #c5c8ce;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--lime);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.app-frame {
+  width: min(1180px, calc(100% - 32px));
+  min-height: calc(100vh - 48px);
+  margin: 24px auto;
+  overflow: hidden;
+  background: var(--bg);
+  border-radius: 36px;
+  box-shadow: 0 30px 80px rgba(18, 22, 28, 0.28);
+}
+
+@media (max-width: 800px) {
+  :root {
+    background: var(--bg);
+  }
+
+  .app-frame {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    border-radius: 0;
+  }
+}
