@@ -3,11 +3,13 @@ import type { FormEvent } from "react";
 import { api, ApiError } from "../api";
 import { useAuth } from "../auth";
 import { Card, Notice, PrimaryButton, Shell, formatTime, roleChoices } from "../components";
-import { ROLE_LABELS } from "../types";
+import { useI18n } from "../i18n";
+import type { TranslationKey } from "../i18n";
 import type { AuditOut, ConnectionOut, MappingOut, Role, ServiceOut, UserOut } from "../types";
 
 export function SettingsPage() {
   const { me } = useAuth();
+  const { t, lang } = useI18n();
   const [connections, setConnections] = useState<ConnectionOut[]>([]);
   const [mappings, setMappings] = useState<MappingOut[]>([]);
   const [services, setServices] = useState<ServiceOut[]>([]);
@@ -32,7 +34,7 @@ export function SettingsPage() {
       setAudit(nextAudit);
       setError("");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Could not load settings.");
+      setError(caught instanceof Error ? caught.message : t("error.could_not_load"));
     }
   }
 
@@ -41,12 +43,12 @@ export function SettingsPage() {
   }, []);
 
   return (
-    <Shell title="Settings">
+    <Shell title={t("settings.title")}>
       <div className="space-y-4">
         {error ? <Notice>{error}</Notice> : null}
         {notice ? <p className="text-sm text-good">{notice}</p> : null}
-        <Card title="Connections">
-          {connections.length === 0 ? <p className="text-sm text-muted">Loading connections.</p> : null}
+        <Card title={t("settings.connections")}>
+          {connections.length === 0 ? <p className="text-sm text-muted">{t("settings.loading_connections")}</p> : null}
           <ul className="space-y-3">
             {connections.map((item) => (
               <li key={item.key} className="flex flex-wrap items-start justify-between gap-3 rounded-2xl bg-elevated px-4 py-3">
@@ -55,7 +57,7 @@ export function SettingsPage() {
                   <p className="mt-1 text-sm text-muted">{item.note}</p>
                 </div>
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${item.configured ? "bg-good text-pine" : "bg-white/10 text-muted"}`}>
-                  {item.configured ? "Configured" : "Not configured"}
+                  {item.configured ? t("status.configured") : t("status.not_configured")}
                 </span>
               </li>
             ))}
@@ -87,16 +89,16 @@ export function SettingsPage() {
             onError={setError}
           />
         ) : (
-          <Card title="Accounts">
-            <p className="text-sm text-muted">Accounts are managed in Active Directory. Map their groups above.</p>
+          <Card title={t("settings.accounts")}>
+            <p className="text-sm text-muted">{t("settings.ad_accounts_notice")}</p>
           </Card>
         )}
-        <Card title="Audit log">
-          {audit.length === 0 ? <p className="text-sm text-muted">No audit events yet.</p> : null}
+        <Card title={t("settings.audit")}>
+          {audit.length === 0 ? <p className="text-sm text-muted">{t("settings.no_audit")}</p> : null}
           <ul className="space-y-2">
             {audit.map((item) => (
               <li key={item.id} className="grid gap-1 rounded-2xl bg-elevated px-4 py-3 text-sm md:grid-cols-[180px_1fr]">
-                <span className="text-muted">{formatTime(item.created_at)}</span>
+                <span className="text-muted">{formatTime(item.created_at, lang)}</span>
                 <span>
                   <span className="font-semibold">{item.actor}</span> {item.action.replaceAll("_", " ")}
                   {item.detail ? ` — ${item.detail}` : ""}
@@ -119,6 +121,7 @@ function MappingForm({
   onDone: (message: string) => Promise<void>;
   onError: (message: string) => void;
 }) {
+  const { t } = useI18n();
   const [group, setGroup] = useState("");
   const [role, setRole] = useState<Role>("system_admin");
   const [busy, setBusy] = useState(false);
@@ -138,17 +141,17 @@ function MappingForm({
   }
 
   return (
-    <Card title="Directory groups">
+    <Card title={t("settings.mappings")}>
       <p className="mb-4 text-sm text-muted">The group named executives always has the Executive role. Map the other IT groups here.</p>
       <ul className="mb-4 space-y-2">
         <li className="flex items-center justify-between rounded-2xl bg-elevated px-4 py-3 text-sm">
           <span>executives</span>
-          <span>{ROLE_LABELS.executive}</span>
+          <span>{t("role.executive")}</span>
         </li>
         {mappings.map((item) => (
           <li key={item.id} className="flex items-center justify-between gap-3 rounded-2xl bg-elevated px-4 py-3 text-sm">
             <span>
-              {item.ad_group} · {ROLE_LABELS[item.role]}
+              {item.ad_group} · {t(`role.${item.role}` as TranslationKey)}
             </span>
             <button
               type="button"
@@ -159,29 +162,29 @@ function MappingForm({
                   .catch((caught) => onError(caught instanceof Error ? caught.message : "Could not remove the mapping."))
               }
             >
-              Remove
+              {t("settings.delete")}
             </button>
           </li>
         ))}
       </ul>
       <form onSubmit={submit} className="flex flex-wrap gap-2">
         <input
-          aria-label="Active Directory group"
+          aria-label={t("settings.ad_group")}
           value={group}
           onChange={(event) => setGroup(event.target.value)}
-          placeholder="Group name"
+          placeholder={t("settings.ad_group")}
           className="min-w-48 flex-1 rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm outline-none"
           required
         />
-        <select aria-label="Role" value={role} onChange={(event) => setRole(event.target.value as Role)} className="rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm">
+        <select aria-label={t("settings.role")} value={role} onChange={(event) => setRole(event.target.value as Role)} className="rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm">
           {roleChoices(false).map((item) => (
             <option key={item} value={item}>
-              {ROLE_LABELS[item]}
+              {t(`role.${item}` as TranslationKey)}
             </option>
           ))}
         </select>
         <PrimaryButton type="submit" disabled={busy}>
-          Add group
+          {t("settings.add")}
         </PrimaryButton>
       </form>
     </Card>
@@ -197,6 +200,7 @@ function ServiceForm({
   onDone: (message: string) => Promise<void>;
   onError: (message: string) => void;
 }) {
+  const { t } = useI18n();
   const [name, setName] = useState("");
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
@@ -217,7 +221,7 @@ function ServiceForm({
   }
 
   return (
-    <Card title="Critical services">
+    <Card title={t("settings.services")}>
       <p className="mb-4 text-sm text-muted">These names appear on the executive page. Health stays empty until a network monitor is connected.</p>
       <ul className="mb-4 space-y-2">
         {services.map((item) => (
@@ -234,16 +238,16 @@ function ServiceForm({
                   .catch((caught) => onError(caught instanceof Error ? caught.message : "Could not remove the service."))
               }
             >
-              Remove
+              {t("settings.delete")}
             </button>
           </li>
         ))}
       </ul>
       <form onSubmit={submit} className="flex flex-wrap gap-2">
-        <input aria-label="Service name" value={name} onChange={(event) => setName(event.target.value)} placeholder="Service name" className="min-w-40 flex-1 rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm outline-none" required />
-        <input aria-label="External key" value={key} onChange={(event) => setKey(event.target.value)} placeholder="External key" className="min-w-40 flex-1 rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm outline-none" required />
+        <input aria-label={t("settings.service_name")} value={name} onChange={(event) => setName(event.target.value)} placeholder={t("settings.service_name")} className="min-w-40 flex-1 rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm outline-none" required />
+        <input aria-label={t("settings.external_key")} value={key} onChange={(event) => setKey(event.target.value)} placeholder={t("settings.external_key")} className="min-w-40 flex-1 rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm outline-none" required />
         <PrimaryButton type="submit" disabled={busy}>
-          Add service
+          {t("settings.add")}
         </PrimaryButton>
       </form>
     </Card>
@@ -259,6 +263,7 @@ function UserForm({
   onDone: (message: string) => Promise<void>;
   onError: (message: string) => void;
 }) {
+  const { t } = useI18n();
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
@@ -290,14 +295,14 @@ function UserForm({
   }
 
   return (
-    <Card title="Local accounts">
+    <Card title={t("settings.accounts")}>
       <ul className="mb-4 space-y-2">
         {users.map((user) => (
           <li key={user.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-elevated px-4 py-3 text-sm">
             <span>
               <span className="font-semibold">{user.display_name}</span>
               <span className="text-muted"> · {user.username}</span>
-              <span className="mt-1 block text-muted">{user.roles.map((role) => ROLE_LABELS[role]).join(", ")}{user.is_active ? "" : " · inactive"}</span>
+              <span className="mt-1 block text-muted">{user.roles.map((role) => t(`role.${role}` as TranslationKey)).join(", ")}{user.is_active ? "" : " · inactive"}</span>
             </span>
             {user.provider === "local" ? (
               <button
@@ -317,21 +322,21 @@ function UserForm({
       </ul>
       <form onSubmit={submit} className="grid gap-3">
         <div className="flex flex-wrap gap-2">
-          <input aria-label="Username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Username" className="min-w-40 flex-1 rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm outline-none" required />
-          <input aria-label="Display name" value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Display name" className="min-w-40 flex-1 rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm outline-none" />
-          <input aria-label="Password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" className="min-w-40 flex-1 rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm outline-none" required />
+          <input aria-label={t("settings.username")} value={username} onChange={(event) => setUsername(event.target.value)} placeholder={t("settings.username")} className="min-w-40 flex-1 rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm outline-none" required />
+          <input aria-label={t("settings.display_name")} value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder={t("settings.display_name")} className="min-w-40 flex-1 rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm outline-none" />
+          <input aria-label={t("settings.password")} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={t("settings.password")} className="min-w-40 flex-1 rounded-full border border-white/10 bg-elevated px-4 py-2 text-sm outline-none" required />
         </div>
         <div className="flex flex-wrap gap-3 text-sm">
           {roleChoices(true).map((role) => (
             <label key={role} className="inline-flex items-center gap-2">
               <input type="checkbox" checked={roles.includes(role)} onChange={() => toggle(role)} />
-              {ROLE_LABELS[role]}
+              {t(`role.${role}` as TranslationKey)}
             </label>
           ))}
         </div>
         <div>
           <PrimaryButton type="submit" disabled={busy || roles.length === 0}>
-            Create account
+            {t("settings.add")}
           </PrimaryButton>
         </div>
       </form>

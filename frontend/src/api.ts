@@ -57,13 +57,19 @@ export function homeFor(roles: Me["roles"]) {
   return navFor(roles)[0]?.to ?? "/login";
 }
 
-export function navFor(roles: Me["roles"]) {
+export type NavItem = {
+  to: string;
+  label: string;
+  i18nKey: "nav.overview" | "nav.servers" | "nav.network" | "nav.helpdesk" | "nav.settings";
+};
+
+export function navFor(roles: Me["roles"]): NavItem[] {
   const manager = roles.includes("it_manager");
-  const items: { to: string; label: string }[] = [];
-  if (manager || roles.includes("executive")) items.push({ to: "/", label: "Overview" });
-  if (manager || roles.includes("system_admin")) items.push({ to: "/servers", label: "Servers" });
-  if (manager || roles.includes("network_admin")) items.push({ to: "/network", label: "Network" });
-  if (manager || roles.includes("helpdesk")) items.push({ to: "/helpdesk", label: "Helpdesk" });
-  if (manager) items.push({ to: "/settings", label: "Settings" });
+  const items: NavItem[] = [];
+  if (manager || roles.includes("executive")) items.push({ to: "/", label: "Overview", i18nKey: "nav.overview" });
+  if (manager || roles.includes("system_admin")) items.push({ to: "/servers", label: "Servers", i18nKey: "nav.servers" });
+  if (manager || roles.includes("network_admin")) items.push({ to: "/network", label: "Network", i18nKey: "nav.network" });
+  if (manager || roles.includes("helpdesk")) items.push({ to: "/helpdesk", label: "Helpdesk", i18nKey: "nav.helpdesk" });
+  if (manager) items.push({ to: "/settings", label: "Settings", i18nKey: "nav.settings" });
   return items;
 }

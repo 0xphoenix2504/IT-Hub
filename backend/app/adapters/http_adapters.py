@@ -146,3 +146,4 @@ class HttpMonitorAdapter(MonitorAdapter):
         except Exception as exc:
             log.warning("Monitor API devices request failed for %s: %s", url, exc)
             return Section(status="error", message="Network monitor is currently unreachable")
+

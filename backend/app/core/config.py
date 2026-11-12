@@ -102,6 +102,13 @@ class Settings(BaseSettings):
         return self.cors_origin.strip().rstrip("/")
 
     @property
+    def origins(self) -> list[str]:
+        raw = self.cors_origin.strip()
+        if not raw:
+            return []
+        return [item.strip().rstrip("/") for item in raw.split(",") if item.strip()]
+
+    @property
     def user_filter(self) -> str:
         value = self.ldaps_user_filter.strip()
         return value or "(sAMAccountName={username})"

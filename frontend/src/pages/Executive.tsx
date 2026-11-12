@@ -2,24 +2,27 @@ import { useEffect, useState } from "react";
 import { ApiError, downloadReport } from "../api";
 import { useAuth } from "../auth";
 import { Card, EmptyState, KpiCard, LoadingBlock, Notice, PrimaryButton, SectionBody, Shell, StatusChip, formatTime } from "../components";
+import { useI18n } from "../i18n";
 import type { ExecutiveDashboard } from "../types";
 import { api } from "../api";
 
-function countTrend(current: number, previous: number, higherIsBetter: boolean) {
-  if (current === previous) return { text: "Same as last month", tone: "muted" as const };
-  const up = current > previous;
-  const good = higherIsBetter ? up : !up;
-  return { text: `${up ? "Up" : "Down"} from last month`, tone: good ? ("good" as const) : ("bad" as const) };
-}
-
 function TicketCards({ section }: { section: ExecutiveDashboard["tickets"] | "loading" }) {
+  const { t } = useI18n();
+
+  function countTrend(current: number, previous: number, higherIsBetter: boolean) {
+    if (current === previous) return { text: t("exec.trend.same"), tone: "muted" as const };
+    const up = current > previous;
+    const good = higherIsBetter ? up : !up;
+    return { text: t(up ? "exec.trend.up" : "exec.trend.down"), tone: good ? ("good" as const) : ("bad" as const) };
+  }
+
   if (section === "loading") {
     return (
       <div className="grid gap-3 sm:grid-cols-2">
-        <KpiCard label="Open now" status="loading" />
-        <KpiCard label="Closed this month" status="loading" />
-        <KpiCard label="Average resolution" status="loading" />
-        <KpiCard label="Closed last month" status="loading" />
+        <KpiCard label={t("exec.open_now")} status="loading" />
+        <KpiCard label={t("exec.closed_this_month")} status="loading" />
+        <KpiCard label={t("exec.avg_resolution")} status="loading" />
+        <KpiCard label={t("exec.closed_last_month")} status="loading" />
       </div>
     );
   }
@@ -31,9 +34,9 @@ function TicketCards({ section }: { section: ExecutiveDashboard["tickets"] | "lo
       : undefined;
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <KpiCard label="Open now" status={section.status} message={section.message} value={data ? String(data.open_now) : undefined} />
+      <KpiCard label={t("exec.open_now")} status={section.status} message={section.message} value={data ? String(data.open_now) : undefined} />
       <KpiCard
-        label="Closed this month"
+        label={t("exec.closed_this_month")}
         status={section.status}
         message={section.message}
         value={data ? String(data.closed_this_month) : undefined}
@@ -41,20 +44,21 @@ function TicketCards({ section }: { section: ExecutiveDashboard["tickets"] | "lo
         hintTone={closed?.tone}
       />
       <KpiCard
-        label="Average resolution"
+        label={t("exec.avg_resolution")}
         status={section.status}
         message={section.message}
         value={data ? `${data.avg_resolution_hours.toFixed(1)} h` : undefined}
         hint={speed?.text}
         hintTone={speed?.tone}
       />
-      <KpiCard label="Closed last month" status={section.status} message={section.message} value={data ? String(data.closed_last_month) : undefined} />
+      <KpiCard label={t("exec.closed_last_month")} status={section.status} message={section.message} value={data ? String(data.closed_last_month) : undefined} />
     </div>
   );
 }
 
 export function ExecutivePage() {
   const { me } = useAuth();
+  const { t, lang } = useI18n();
   const [board, setBoard] = useState<ExecutiveDashboard | null>(null);
   const [error, setError] = useState("");
   const [exportError, setExportError] = useState("");
@@ -63,8 +67,8 @@ export function ExecutivePage() {
   useEffect(() => {
     api<ExecutiveDashboard>("/api/dashboard/executive")
       .then(setBoard)
-      .catch((caught) => setError(caught instanceof Error ? caught.message : "Could not load this data."));
-  }, []);
+      .catch((caught) => setError(caught instanceof Error ? caught.message : t("error.could_not_load")));
+  }, [t]);
 
   async function exportPdf() {
     setBusy(true);
@@ -72,7 +76,7 @@ export function ExecutivePage() {
     try {
       await downloadReport();
     } catch (caught) {
-      setExportError(caught instanceof ApiError ? caught.message : "Could not export the report.");
+      setExportError(caught instanceof ApiError ? caught.message : t("error.could_not_load"));
     } finally {
       setBusy(false);
     }
@@ -83,15 +87,15 @@ export function ExecutivePage() {
     [board.service_health, board.tickets, board.assets, board.top_problems].every((section) => section.status === "not_configured");
 
   return (
-    <Shell title="Overview">
+    <Shell title={t("exec.title")}>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm leading-6 text-muted">
-          {board ? `Checked ${formatTime(board.generated_at)}.` : "Checking the connected sources."}{" "}
-          {allEmpty ? "Sources are not connected yet. Figures appear when those systems are configured." : null}
+          {board ? `${t("time.checked")} ${formatTime(board.generated_at, lang)}.` : t("loading.checking")}{" "}
+          {allEmpty ? t("exec.sources_unconnected") : null}
         </p>
         {me?.roles.includes("executive") || me?.roles.includes("it_manager") ? (
           <PrimaryButton disabled={busy} onClick={() => void exportPdf()}>
-            {busy ? "Preparing report" : "Monthly report"}
+            {busy ? t("exec.preparing_report") : t("exec.monthly_report")}
           </PrimaryButton>
         ) : null}
       </div>
@@ -103,17 +107,17 @@ export function ExecutivePage() {
       {error ? <Notice>{error}</Notice> : null}
       {!board && !error ? (
         <div className="grid gap-4 md:grid-cols-2">
-          <Card title="Service health">
+          <Card title={t("exec.service_health")}>
             <LoadingBlock />
           </Card>
-          <Card title="Tickets">
+          <Card title={t("exec.tickets")}>
             <TicketCards section="loading" />
           </Card>
         </div>
       ) : null}
       {board ? (
         <div className="grid gap-4 xl:grid-cols-2">
-          <Card title="Service health" lastUpdated={board.service_health.last_updated}>
+          <Card title={t("exec.service_health")} lastUpdated={board.service_health.last_updated}>
             <SectionBody status={board.service_health.status} message={board.service_health.message}>
               {board.service_health.data && board.service_health.data.length > 0 ? (
                 <ul className="space-y-5">
@@ -123,7 +127,7 @@ export function ExecutivePage() {
                         <span className="font-medium">{service.name}</span>
                         <StatusChip status={service.state} />
                       </div>
-                      <div className="mb-2 text-sm text-muted">{service.availability_30d.toFixed(1)}% over the last 30 days</div>
+                      <div className="mb-2 text-sm text-muted">{service.availability_30d.toFixed(1)}% {t("exec.availability_30d")}</div>
                       <div className="h-1.5 rounded-full bg-white/10">
                         <div
                           className={`h-1.5 rounded-full ${service.state === "up" ? "bg-good" : service.state === "degraded" ? "bg-warn" : "bg-bad"}`}
@@ -134,31 +138,36 @@ export function ExecutivePage() {
                   ))}
                 </ul>
               ) : (
-                <EmptyState message="None reported." />
+                <EmptyState message={t("empty.none_reported")} />
               )}
             </SectionBody>
           </Card>
-          <Card title="Tickets" lastUpdated={board.tickets.last_updated}>
+          <Card title={t("exec.tickets")} lastUpdated={board.tickets.last_updated}>
             <TicketCards section={board.tickets} />
           </Card>
-          <Card title="Assets" lastUpdated={board.assets.last_updated}>
+          <Card title={t("exec.assets")} lastUpdated={board.assets.last_updated}>
             <div className="grid gap-3 sm:grid-cols-3">
               <KpiCard
-                label="Devices"
+                label={t("exec.devices")}
                 status={board.assets.status}
                 message={board.assets.message}
                 value={board.assets.data ? String(board.assets.data.total_devices) : undefined}
               />
-              <KpiCard label="Servers" status={board.assets.status} message={board.assets.message} value={board.assets.data ? String(board.assets.data.total_servers) : undefined} />
               <KpiCard
-                label="Nearing end of warranty"
+                label={t("exec.servers")}
+                status={board.assets.status}
+                message={board.assets.message}
+                value={board.assets.data ? String(board.assets.data.total_servers) : undefined}
+              />
+              <KpiCard
+                label={t("exec.warranty_end")}
                 status={board.assets.status}
                 message={board.assets.message}
                 value={board.assets.data ? String(board.assets.data.nearing_end_of_life) : undefined}
               />
             </div>
           </Card>
-          <Card title="Most frequent problems" lastUpdated={board.top_problems.last_updated}>
+          <Card title={t("exec.top_problems")} lastUpdated={board.top_problems.last_updated}>
             <SectionBody status={board.top_problems.status} message={board.top_problems.message}>
               {board.top_problems.data && board.top_problems.data.length > 0 ? (
                 <ul className="space-y-4">
@@ -178,7 +187,7 @@ export function ExecutivePage() {
                   })}
                 </ul>
               ) : (
-                <EmptyState message="None reported." />
+                <EmptyState message={t("empty.none_reported")} />
               )}
             </SectionBody>
           </Card>

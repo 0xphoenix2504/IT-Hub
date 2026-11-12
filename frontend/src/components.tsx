@@ -2,13 +2,15 @@ import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import { homeFor, navFor } from "./api";
 import { useAuth } from "./auth";
-import { EMPTY_MESSAGE, ROLE_LABELS } from "./types";
+import { useI18n } from "./i18n";
+import type { TranslationKey } from "./i18n";
 import type { Role } from "./types";
 
-export function formatTime(value: string) {
+export function formatTime(value: string, lang: string = "en") {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+  const locale = lang === "ar" ? "ar-EG" : "en-US";
+  return date.toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" });
 }
 
 export function Frame({ children }: { children: ReactNode }) {
@@ -17,18 +19,19 @@ export function Frame({ children }: { children: ReactNode }) {
 
 export function Shell({ title, children }: { title: string; children: ReactNode }) {
   const { me, logout } = useAuth();
+  const { t, lang, toggleLang, isRtl } = useI18n();
   const items = me ? navFor(me.roles) : [];
   const home = me ? homeFor(me.roles) : "/login";
   return (
     <Frame>
       <div className="px-4 py-4 md:px-8 md:py-6">
         <a href="#content" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-10 focus:rounded-full focus:bg-lime focus:px-3 focus:py-2 focus:text-ink">
-          Skip to content
+          {t("nav.skip")}
         </a>
         <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <span className="grid h-9 w-9 place-items-center rounded-full bg-lime text-sm font-bold text-ink">IT</span>
-            <span className="text-sm font-semibold tracking-wide">IT Hub</span>
+            <span className="text-sm font-semibold tracking-wide">{t("brand.name")}</span>
           </div>
           <nav className="flex gap-1 overflow-x-auto rounded-full bg-black/30 p-1" aria-label="Primary">
             {items.map((item) => (
@@ -40,26 +43,34 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
                   `whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${isActive ? "bg-lime text-ink" : "text-white/85 hover:bg-white/5"}`
                 }
               >
-                {item.label}
+                {t(item.i18nKey as TranslationKey)}
               </NavLink>
             ))}
           </nav>
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              className="rounded-full border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/90 hover:bg-white/10 transition"
+              onClick={toggleLang}
+              title={lang === "en" ? "التبديل إلى العربية" : "Switch to English"}
+            >
+              {lang === "en" ? "عربي" : "EN"}
+            </button>
             {me ? (
-              <div className="text-right">
+              <div className={isRtl ? "text-left" : "text-right"}>
                 <div className="text-sm font-semibold">{me.display_name}</div>
-                <div className="text-xs text-muted">{me.roles.map((role) => ROLE_LABELS[role]).join(", ")}</div>
+                <div className="text-xs text-muted">{me.roles.map((role) => t(`role.${role}` as TranslationKey)).join(", ")}</div>
               </div>
             ) : null}
             <button type="button" className="rounded-full border border-white/15 px-4 py-2 text-sm" onClick={() => void logout()}>
-              Sign out
+              {t("nav.signout")}
             </button>
           </div>
         </header>
         <div className="mt-8 flex items-center gap-3">
           {home !== window.location.pathname ? (
-            <NavLink to={home} className="grid h-10 w-10 place-items-center rounded-full border border-white/15 text-lg" aria-label="Back">
-              ←
+            <NavLink to={home} className="grid h-10 w-10 place-items-center rounded-full border border-white/15 text-lg" aria-label={t("nav.back")}>
+              {isRtl ? "→" : "←"}
             </NavLink>
           ) : null}
           <h1 className="text-4xl font-semibold tracking-tight">{title}</h1>
@@ -83,12 +94,13 @@ export function Card({
   action?: ReactNode;
   children: ReactNode;
 }) {
+  const { t, lang } = useI18n();
   return (
     <section className="rounded-[28px] border border-white/10 bg-card p-6">
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">{title}</h2>
-          {lastUpdated ? <p className="mt-1 text-sm text-muted">Last updated {formatTime(lastUpdated)}</p> : null}
+          {lastUpdated ? <p className="mt-1 text-sm text-muted">{t("time.last_updated")} {formatTime(lastUpdated, lang)}</p> : null}
         </div>
         {action}
       </div>
@@ -97,12 +109,14 @@ export function Card({
   );
 }
 
-export function EmptyState({ message = EMPTY_MESSAGE }: { message?: string | null }) {
-  return <p className="text-sm leading-6 text-muted">{message || EMPTY_MESSAGE}</p>;
+export function EmptyState({ message }: { message?: string | null }) {
+  const { t } = useI18n();
+  return <p className="text-sm leading-6 text-muted">{message || t("empty.no_data")}</p>;
 }
 
 export function ErrorState({ message }: { message?: string | null }) {
-  return <p className="text-sm leading-6 text-bad">{message || "Could not load this data."}</p>;
+  const { t } = useI18n();
+  return <p className="text-sm leading-6 text-bad">{message || t("error.could_not_load")}</p>;
 }
 
 export function LoadingBlock() {
@@ -158,10 +172,10 @@ const CHIP = {
   unknown: "bg-[#d5dde3] text-pine",
 };
 
-const CHIP_LABEL = { up: "Running", degraded: "Degraded", down: "Down", unknown: "Unknown" };
-
 export function StatusChip({ status }: { status: keyof typeof CHIP }) {
-  return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${CHIP[status]}`}>{CHIP_LABEL[status]}</span>;
+  const { t } = useI18n();
+  const labelKey = `status.${status === "up" ? "running" : status}` as TranslationKey;
+  return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${CHIP[status]}`}>{t(labelKey)}</span>;
 }
 
 export function PillTabs<T extends string>({
@@ -246,11 +260,12 @@ export function FilterRow({
   onQuery: (value: string) => void;
   onStatus: (value: string) => void;
 }) {
+  const { t } = useI18n();
   const count = Number(query.trim().length > 0) + Number(status !== "any");
   return (
     <div className="mb-4 flex flex-wrap items-center gap-3">
       <div className="inline-flex items-center gap-2 rounded-full bg-card px-4 py-2 text-sm">
-        Active filters
+        {t("tech.active_filters")}
         <span className="grid h-6 min-w-6 place-items-center rounded-full bg-lime px-2 font-semibold text-ink">{count}</span>
       </div>
       <select
@@ -259,17 +274,17 @@ export function FilterRow({
         onChange={(event) => onStatus(event.target.value)}
         className="rounded-full border border-white/10 bg-card px-4 py-2 text-sm"
       >
-        <option value="any">Any status</option>
-        <option value="up">Running</option>
-        <option value="degraded">Degraded</option>
-        <option value="down">Down</option>
-        <option value="unknown">Unknown</option>
+        <option value="any">{t("status.any")}</option>
+        <option value="up">{t("status.running")}</option>
+        <option value="degraded">{t("status.degraded")}</option>
+        <option value="down">{t("status.down")}</option>
+        <option value="unknown">{t("status.unknown")}</option>
       </select>
       <input
         type="search"
         value={query}
         aria-label="Search"
-        placeholder="Search"
+        placeholder={t("tech.search_placeholder")}
         onChange={(event) => onQuery(event.target.value)}
         className="min-w-48 flex-1 rounded-full border border-white/10 bg-card px-4 py-2 text-sm outline-none"
       />
