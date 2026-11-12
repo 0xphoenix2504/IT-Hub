@@ -24,6 +24,8 @@ def init_engine(url: str) -> None:
     if url.startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False}
         kwargs["poolclass"] = StaticPool
+    else:
+        kwargs["connect_args"] = {"prepare_threshold": None}
     engine = create_engine(url, **kwargs)
     SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
 

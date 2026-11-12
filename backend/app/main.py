@@ -42,6 +42,8 @@ def create_app() -> FastAPI:
             db = database.SessionLocal()
             try:
                 bootstrap_first_admin(db)
+            except Exception as exc:
+                log.warning("Could not bootstrap first admin: %s", exc)
             finally:
                 db.close()
         log.info("IT Hub backend ready (%s, auth=%s)", current_config.environment, current_config.provider)
