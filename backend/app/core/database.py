@@ -8,8 +8,18 @@ engine = None
 SessionLocal = None
 
 
+def normalize_url(url: str) -> str:
+    url = url.strip()
+    if url.startswith("postgres://"):
+        return "postgresql+psycopg://" + url[len("postgres://"):]
+    if url.startswith("postgresql://"):
+        return "postgresql+psycopg://" + url[len("postgresql://"):]
+    return url
+
+
 def init_engine(url: str) -> None:
     global engine, SessionLocal
+    url = normalize_url(url)
     kwargs: dict = {"pool_pre_ping": True}
     if url.startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False}
